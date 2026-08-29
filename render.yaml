@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: qflow-qa-agent
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 3100
+      - key: HEADLESS
+        value: "true"
+      - key: NAV_TIMEOUT_MS
+        value: "60000"
+      - key: GEMINI_API_KEY
+        sync: false
