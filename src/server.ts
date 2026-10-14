@@ -379,7 +379,7 @@ app.post('/api/scan', requireAuth, async (req, res) => {
 // ── Cancel a running scan ──────────────────────────────────────────────────────
 
 app.post('/api/scans/:id/cancel', requireAuth, (req, res) => {
-  const scan = scans.get(req.params.id);
+  const scan = scans.get(String(req.params.id));
   if (!scan) return res.status(404).json({ error: 'Scan not found' });
   if (scan.status !== 'running' || !scan.process) {
     return res.status(400).json({ error: 'Scan is not running' });
@@ -394,7 +394,7 @@ app.post('/api/scans/:id/cancel', requireAuth, (req, res) => {
 // ── Scan details ───────────────────────────────────────────────────────────────
 
 app.get('/api/scans/:id', requireAuth, (req, res) => {
-  const scan = scans.get(req.params.id);
+  const scan = scans.get(String(req.params.id));
   if (!scan) return res.status(404).json({ error: 'Scan not found' });
   res.json({
     id: scan.id,
@@ -412,7 +412,7 @@ app.get('/api/scans/:id', requireAuth, (req, res) => {
 // ── Scan logs ──────────────────────────────────────────────────────────────────
 
 app.get('/api/scans/:id/logs', requireAuth, (req, res) => {
-  const scan = scans.get(req.params.id);
+  const scan = scans.get(String(req.params.id));
   if (!scan) return res.status(404).json({ error: 'Scan not found' });
   res.json({ logs: scan.logs });
 });
@@ -420,7 +420,7 @@ app.get('/api/scans/:id/logs', requireAuth, (req, res) => {
 // ── Report markdown ────────────────────────────────────────────────────────────
 
 app.get('/api/scans/:id/report', requireAuth, async (req, res) => {
-  const scan = scans.get(req.params.id);
+  const scan = scans.get(String(req.params.id));
   if (!scan?.reportPath) return res.status(404).json({ error: 'Report not available' });
   try {
     const content = await fs.readFile(scan.reportPath, 'utf-8');
@@ -433,7 +433,7 @@ app.get('/api/scans/:id/report', requireAuth, async (req, res) => {
 // ── Download ZIP (report + screenshots) ────────────────────────────────────────
 
 app.get('/api/scans/:id/download', requireAuth, async (req, res) => {
-  const scan = scans.get(req.params.id);
+  const scan = scans.get(String(req.params.id));
   if (!scan?.outputDir) return res.status(404).json({ error: 'No output available' });
 
   const outputPath = path.join(ROOT, scan.outputDir);

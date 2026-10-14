@@ -46,8 +46,8 @@ The agent executes **23 distinct testing protocols** in every run:
 ### Setup
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-repo/qflow.git
-    cd qflow
+    git clone https://github.com/finding-haseeb/qflow-agent.git
+    cd qflow-agent
     ```
 
 2.  **Install dependencies:**

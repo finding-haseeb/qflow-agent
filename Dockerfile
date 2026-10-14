@@ -18,11 +18,10 @@ RUN npx esbuild src/qaAgent.ts --bundle --platform=node --format=esm --packages=
 
 # Clean up dev deps after build
 RUN npm prune --omit=dev
-// this is the clear version of the rootno t
 
 EXPOSE 3100
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD curl -f http://localhost:3100/api/health || exit 1
+  CMD node -e "fetch('http://localhost:'+(process.env.PORT||3100)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "dist/server.mjs"]
