@@ -4,7 +4,7 @@
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6.svg)
 ![Playwright](https://img.shields.io/badge/Playwright-Test-45ba4b.svg)
-![Gemini AI](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-8e75b2.svg)
+![Gemini AI](https://img.shields.io/badge/AI-Gemini%203.5%20Flash-8e75b2.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 ---
@@ -15,7 +15,7 @@ This is not just a scraper; it is an intelligent testing entity. QFlow navigates
 
 It operates on a **Hybrid Architecture**:
 1.  **Heuristic Engine:** Instantaneously detects objective failures (HTTP 404/500, Console Errors, Broken Images, SEO gaps).
-2.  **Cognitive AI Engine:** Uses **Gemini 2.5 Flash** to visually "see" the page, understand UI context, plan autonomous workflows (filling forms, navigating complex SPAs), and detect subjective visual bugs.
+2.  **Cognitive AI Engine:** Uses **Gemini 3.5 Flash** to visually "see" the page, understand UI context, plan autonomous workflows (filling forms, navigating complex SPAs), and detect subjective visual bugs.
 
 ## ✨ Key Features
 
@@ -79,8 +79,8 @@ The agent utilizes a generic model strategy to balance cost and performance:
 
 | Function | Model | Reason |
 | :--- | :--- | :--- |
-| **Logic & Planning** | `Gemini 2.5 Flash Lite` | High speed, higher rate limits (RPM), excellent text reasoning. |
-| **Vision & Analysis** | `Gemini 2.5 Flash` | Multimodal capabilities for analyzing screenshots and spotting UI bugs. |
+| **Logic & Planning** | `gemini-3.5-flash-lite` (override with `GEMINI_TEXT_MODEL`) | High speed, higher rate limits (RPM), excellent text reasoning. |
+| **Vision & Analysis** | `gemini-3.5-flash` (override with `GEMINI_VISION_MODEL`; falls back to the text model if unavailable) | Multimodal capabilities for analyzing screenshots and spotting UI bugs. |
 
 *Note: The agent automatically handles rate-limiting and retries.*
 

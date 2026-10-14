@@ -55,6 +55,8 @@ const NAV_TIMEOUT = Number(process.env.NAV_TIMEOUT_MS ?? '90000');
 const SETTLE_DELAY = 5_000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
 const LLM_ENABLED = !!GEMINI_API_KEY;
+const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3.5-flash-lite';
+const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-3.5-flash';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -91,14 +93,14 @@ const initGemini = () => {
   }
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-  // Use 2.5 Flash Lite (10 RPM) for fast text decisions
-  geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
-  // Use 2.5 Flash (5 RPM) for vision/heavy analysis
-  geminiVisionModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  // Lite model for fast text decisions
+  geminiModel = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL });
+  // Full Flash model for vision/heavy analysis
+  geminiVisionModel = genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL });
 
   console.log('  ✓ Gemini LLM initialized');
-  console.log('    Text model:   gemini-2.5-flash-lite (10 RPM)');
-  console.log('    Vision model: gemini-2.5-flash (5 RPM)');
+  console.log(`    Text model:   ${GEMINI_TEXT_MODEL}`);
+  console.log(`    Vision model: ${GEMINI_VISION_MODEL}`);
 };
 
 /** Generic text prompt to Gemini (uses fast lite model) */
@@ -123,7 +125,7 @@ const askGemini = async (prompt: string): Promise<string> => {
   }
 };
 
-/** Send a screenshot (PNG path) + text prompt to Gemini Vision (uses 2.5 Flash) */
+/** Send a screenshot (PNG path) + text prompt to Gemini Vision (falls back to the text model if the vision model is unavailable) */
 const askGeminiVision = async (screenshotPath: string, prompt: string): Promise<string> => {
   const model = geminiVisionModel || geminiModel;
   if (!model) return '';
@@ -151,6 +153,20 @@ const askGeminiVision = async (screenshotPath: string, prompt: string): Promise<
         const result = await model.generateContent([prompt, imagePart]);
         return result.response.text();
       } catch { return ''; }
+    }
+    if (geminiModel && model !== geminiModel && /\b(503|404)\b|UNAVAILABLE|NOT_FOUND|overloaded/i.test(msg)) {
+      log(`Vision model unavailable — falling back to ${GEMINI_TEXT_MODEL}`);
+      try {
+        const imageData = await fs.readFile(screenshotPath);
+        const imagePart: Part = {
+          inlineData: { mimeType: 'image/png', data: imageData.toString('base64') },
+        };
+        const result = await geminiModel.generateContent([prompt, imagePart]);
+        return result.response.text();
+      } catch (fallbackErr) {
+        log(`LLM vision fallback failed: ${(fallbackErr as Error).message}`);
+        return '';
+      }
     }
     log(`LLM vision call failed: ${msg}`);
     return '';
@@ -2777,7 +2793,7 @@ const writeReport = async (ctx: RunContext, url: string, scope: string) => {
   L.push(`| Run | ${ctx.runId} |`);
   L.push(`| Date | ${new Date().toISOString()} |`);
   L.push(`| Browser | Chromium (Playwright, headless) |`);
-  L.push(`| AI Engine | ${LLM_ENABLED ? 'Gemini 2.5 Flash + 2.5 Flash Lite' : 'Disabled (no API key)'} |`);
+  L.push(`| AI Engine | ${LLM_ENABLED ? `${GEMINI_VISION_MODEL} + ${GEMINI_TEXT_MODEL}` : 'Disabled (no API key)'} |`);
   L.push(`| Scope | ${scope} |`);
   L.push(`| Bugs Found | **${bugs.length}** |`);
   L.push('');
