@@ -7,6 +7,10 @@
 ![Gemini AI](https://img.shields.io/badge/AI-Gemini%203.5%20Flash-8e75b2.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
+### 🌐 [Try QFlow live → qflow-qa-agent.onrender.com](https://qflow-qa-agent.onrender.com)
+
+> Hosted on Render's free tier: the first visit after a quiet spell can take up to a minute while the server wakes up.
+
 ---
 
 ## 🚀 Overview
