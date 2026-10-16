@@ -4,6 +4,7 @@ import { stdin as input, stdout as output } from 'node:process';
 import { createInterface } from 'node:readline/promises';
 import { chromium, Page, BrowserContext, Response, Request } from 'playwright';
 import { GoogleGenerativeAI, GenerativeModel, Part } from '@google/generative-ai';
+import { parseLLMJson } from './llmJson.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -52,11 +53,12 @@ type FailedRequest = {
 const NON_INTERACTIVE = process.env.QFLOW_NON_INTERACTIVE === '1';
 const rl = NON_INTERACTIVE ? null as any : createInterface({ input, output });
 const NAV_TIMEOUT = Number(process.env.NAV_TIMEOUT_MS ?? '90000');
-const SETTLE_DELAY = 5_000;
+const SETTLE_DELAY = Number(process.env.QFLOW_SETTLE_MS ?? '5000');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
 const LLM_ENABLED = !!GEMINI_API_KEY;
 const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3.5-flash-lite';
 const GEMINI_VISION_MODEL = process.env.GEMINI_VISION_MODEL || 'gemini-3.5-flash';
+const GEMINI_BASE_URL = process.env.GEMINI_BASE_URL || undefined;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -76,7 +78,7 @@ let geminiVisionModel: GenerativeModel | null = null;
 
 /** Throttle to stay within RPM limits */
 let lastLLMCall = 0;
-const LLM_MIN_DELAY = 7_000; // ~8-9 RPM max to stay under limits
+const LLM_MIN_DELAY = Number(process.env.QFLOW_LLM_MIN_DELAY_MS ?? '7000'); // ~8-9 RPM max to stay under limits
 
 const throttleLLM = async () => {
   const elapsed = Date.now() - lastLLMCall;
@@ -94,9 +96,10 @@ const initGemini = () => {
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
   // Lite model for fast text decisions
-  geminiModel = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL });
+  const requestOptions = GEMINI_BASE_URL ? { baseUrl: GEMINI_BASE_URL } : undefined;
+  geminiModel = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL }, requestOptions);
   // Full Flash model for vision/heavy analysis
-  geminiVisionModel = genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL });
+  geminiVisionModel = genAI.getGenerativeModel({ model: GEMINI_VISION_MODEL }, requestOptions);
 
   console.log('  ✓ Gemini LLM initialized');
   console.log(`    Text model:   ${GEMINI_TEXT_MODEL}`);
@@ -336,9 +339,7 @@ If there are no confirmed user-impacting issues at this time, return exactly:
 
   const raw = await askGeminiVision(screenshotPath, prompt);
   try {
-    // Strip any markdown code fences
-    const cleaned = raw.replace(/```json\s*\n?/g, '').replace(/```\s*$/g, '').trim();
-    return JSON.parse(cleaned);
+    return parseLLMJson(raw);
   } catch {
     log('LLM visual analysis returned non-JSON, skipping');
     return { bugs: [] };
@@ -409,10 +410,10 @@ Return ONLY valid JSON (no markdown fences) in this exact format:
 
   const raw = await askGeminiVision(screenshotFile, prompt);
   try {
-    const cleaned = raw.replace(/```json\s*\n?/g, '').replace(/```\s*$/g, '').trim();
-    return JSON.parse(cleaned);
+    return parseLLMJson(raw);
   } catch {
-    return { action: 'done', reasoning: 'Could not parse LLM response' };
+    log(`LLM returned unparseable response: ${raw.slice(0, 120).replace(/\s+/g, ' ') || '(empty)'}`);
+    return { action: 'done', reasoning: raw ? 'Could not parse LLM response' : 'LLM returned no response' };
   }
 };
 
@@ -572,8 +573,7 @@ If everything looks correct, return: {"bugs": []}`;
 
   const raw = await askGeminiVision(afterScreenshot, prompt);
   try {
-    const cleaned = raw.replace(/```json\s*\n?/g, '').replace(/```\s*$/g, '').trim();
-    return JSON.parse(cleaned);
+    return parseLLMJson(raw);
   } catch {
     return { bugs: [] };
   }

@@ -8,8 +8,10 @@
     "build": "npm run build:agent && npm run build:server",
     "start": "npm run build:agent && node --env-file=.env dist/qaAgent.mjs",
     "serve": "npm run build && node --env-file=.env dist/server.mjs",
-    "test": "npm run start",
-    "lint": "echo \"No lint configured\""
+    "test": "npm run typecheck && npm run build && node --test \"test/*.test.ts\"",
+    "lint": "echo \"No lint configured\"",
+    "typecheck": "tsc --noEmit -p .",
+    "test:unit": "node --test test/llmJson.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

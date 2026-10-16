@@ -130,6 +130,32 @@ Target: http://localhost:3000
 
 ---
 
+## 🧪 Testing
+
+```bash
+npm test
+```
+
+Type-checks, builds, then runs the suite with Node's built-in test runner (needs Node 22.18+ for native TypeScript support). Nothing calls the real Gemini API or the internet:
+
+| File | Covers |
+| :--- | :--- |
+| `test/llmJson.test.ts` | `parseLLMJson` on fenced, prose-wrapped, nested and malformed LLM replies |
+| `test/server.test.ts` | Every server route with auth off and with GitHub OAuth on, plus the scan lifecycle (start, WebSocket logs, 409, cancel) |
+| `test/agent.smoke.test.ts` | A full agent scan of a local fixture site against a fake Gemini endpoint, checking the report, AI bugs and screenshots |
+
+Run only the fast unit tests with `npm run test:unit`.
+
+These env vars exist mainly for tests:
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `GEMINI_BASE_URL` | Google's endpoint | Send Gemini requests to another host (e.g. a mock) |
+| `QFLOW_LLM_MIN_DELAY_MS` | `7000` | Minimum gap between LLM calls (rate limiting) |
+| `QFLOW_SETTLE_MS` | `5000` | Wait after each navigation for the page to settle |
+
+---
+
 ## 📂 Output Artifacts
 
 Results are stored in the `output/` directory, organized by run timestamp:
